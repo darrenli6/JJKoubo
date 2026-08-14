@@ -1,0 +1,4 @@
+interface:
+  display_name: "KB Cut Style"
+  short_description: "选择和解析 KB Cut 的 frame.md 风格预设"
+  default_prompt: "使用 $kbcut-style 为这条口播视频选择一个 frame.md 风格预设。"

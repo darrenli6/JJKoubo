@@ -1,0 +1,466 @@
+<!doctype html>
+<!--@template-doc
+  founder-interview — KB Cut HyperFrames packaging template.
+
+  This file is the executable form of frame.md. It is filled by
+  $kbcut/scripts/make-package.cjs and must never be hand-edited per video.
+
+  Placeholder contract
+  --------------------
+  Content placeholders map 1:1 to the `Content Inputs` section of frame.md:
+    {{TOPIC_LINE_1}}        HTML fragment, mixed-weight spans
+    {{TOPIC_LINE_2}}        HTML fragment, mixed-weight spans
+    {{SPEAKER_NAME}}        plain text
+    {{SPEAKER_CREDENTIALS}} HTML fragment, 2-4 <div class="credential"> lines
+    {{CAPTION_SEGMENTS_JSON}} JSON array; carries caption_segments + caption_highlights
+
+  Reserved technical placeholders (not part of Content Inputs):
+    {{COMPOSITION_ID}} {{COMPOSITION_WIDTH}} {{COMPOSITION_HEIGHT}}
+    {{DURATION_SECONDS}} {{VIDEO_SRC}}
+    {{FONT_BODY_NORMAL}} {{FONT_BODY_BOLD}}
+    {{LAYOUT_VARS}}         CSS custom properties: crop plan + shot profile
+
+  Layout law
+  ----------
+  Every position in this template resolves through a CSS custom property
+  injected by {{LAYOUT_VARS}}. Per-video adjustment changes those numbers only.
+  Do not hard-code a position, and do not restructure the DOM per video.
+-->
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width={{COMPOSITION_WIDTH}}, height={{COMPOSITION_HEIGHT}}" />
+    <title>KB Cut — founder-interview</title>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <style>
+      @font-face {
+        font-family: "FounderBody";
+        src: url("fonts/{{FONT_BODY_NORMAL}}");
+        font-weight: 400;
+        font-display: block;
+      }
+      @font-face {
+        font-family: "FounderBody";
+        src: url("fonts/{{FONT_BODY_BOLD}}");
+        font-weight: 700;
+        font-display: block;
+      }
+      /*
+        Declared so the renderer accepts the fallback in the font stack. It has
+        no downloadable file; local() is the sanctioned form for an
+        OS-bundled face. FounderBody above is what actually renders.
+      */
+      @font-face {
+        font-family: "Noto Serif CJK SC";
+        src: local("Noto Serif CJK SC");
+      }
+
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        background: #000000;
+      }
+
+      /*
+        Layout variables. frame.md `spacing` supplies the style baseline;
+        make-package.cjs overrides per aspect ratio, then per shot profile.
+      */
+      #root {
+        {{LAYOUT_VARS}}
+
+        position: relative;
+        width: {{COMPOSITION_WIDTH}}px;
+        height: {{COMPOSITION_HEIGHT}}px;
+        overflow: hidden;
+        container-type: size;
+        font-family: "FounderBody", "Noto Serif CJK SC", serif;
+        font-kerning: none;
+        letter-spacing: 0;
+      }
+
+      /* Opaque ground: guards against a white flash at the first composited frame. */
+      #stage-ground {
+        position: absolute;
+        inset: 0;
+        background: #000000;
+        z-index: 0;
+      }
+
+      .clip {
+        position: absolute;
+        inset: 0;
+      }
+
+      /* ---------- Layer 0: footage ---------- */
+      /*
+        Crop is object-fit/object-position only. No filter, no blend mode,
+        no color transform — the filmed person's grade must survive untouched.
+        object-position carries the crop anchor:
+          50% 0%   keep headroom, cut the bottom
+          50% 50%  centered
+          50% 100% cut the headroom
+      */
+      #footage {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: var(--video-anchor-x) var(--video-anchor-y);
+        transform: scale(var(--video-scale));
+        transform-origin: var(--video-anchor-x) var(--video-anchor-y);
+        z-index: 1;
+      }
+
+      /* ---------- Layers 1+2: upper-left text column ---------- */
+      /*
+        Topic lockup and credentials share one flow column rather than each
+        carrying an absolute top. A taller topic (three lines, a bigger type
+        scale) pushes the credentials down instead of colliding with them, so
+        the pair cannot overlap at any aspect ratio or shot profile.
+        --credentials-gap is the tunable; frame.md's credentials-top is the
+        resulting position for a normal two-line topic, not a hard coordinate.
+      */
+      #upper-left-column {
+        position: absolute;
+        left: var(--safe-x);
+        top: var(--title-top);
+        z-index: 100;
+      }
+
+      #topic-lockup {
+        max-width: var(--title-max-width);
+      }
+
+      .topic-line {
+        color: #ffffff;
+        line-height: 0.98;
+        margin: 0;
+      }
+
+      #topic-line-1 {
+        font-size: var(--title-size);
+      }
+
+      #topic-line-2 {
+        font-size: var(--title-size);
+        margin-top: var(--title-gap);
+      }
+
+      #topic-rule {
+        width: var(--title-rule-width);
+        height: var(--title-rule-height);
+        background: rgba(255, 210, 31, 0.82);
+        margin-top: var(--title-gap);
+      }
+
+      .t-strong {
+        font-weight: 700;
+        color: #ffffff;
+      }
+      .t-light {
+        font-weight: 400;
+        color: rgba(255, 255, 255, 0.76);
+      }
+      .t-accent {
+        font-weight: 700;
+        color: #ffd21f;
+      }
+
+      #speaker-credentials {
+        margin-top: var(--credentials-gap);
+        max-width: var(--credentials-max-width);
+      }
+
+      #speaker-name {
+        font-size: var(--speaker-name-size);
+        font-weight: 700;
+        color: #ffffff;
+        line-height: 1.1;
+      }
+
+      .credential {
+        font-size: var(--speaker-detail-size);
+        font-weight: 400;
+        color: #ffffff;
+        line-height: 1.18;
+      }
+
+      /* ---------- Layer 3: live captions ---------- */
+      /*
+        The band is anchored at its BOTTOM edge: one line sits on
+        --caption-zone-bottom, a second line grows upward into the band.
+        That keeps the platform-UI reserve intact no matter how the line wraps.
+      */
+      #captions-container {
+        position: absolute;
+        left: 50%;
+        margin-left: calc(var(--caption-max-width) / -2);
+        width: var(--caption-max-width);
+        top: var(--caption-zone-top);
+        height: calc(var(--caption-zone-bottom) - var(--caption-zone-top));
+        z-index: 200;
+      }
+
+      /* Captions overlap rather than stack: hidden siblings must not hold layout. */
+      .caption {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        text-align: center;
+        visibility: hidden;
+        opacity: 0;
+      }
+
+      .caption-line {
+        display: block;
+        font-size: var(--caption-size);
+        font-weight: 400;
+        color: rgba(255, 255, 255, 0.78);
+        line-height: 1.08;
+      }
+
+      .chunk {
+        display: inline-block;
+        visibility: hidden;
+        opacity: 0;
+      }
+
+      .chunk.emphasis {
+        font-size: var(--caption-emphasis-size);
+        font-weight: 700;
+        color: #ffd21f;
+      }
+
+      /* ---------- Layer 4: progress ---------- */
+      /*
+        Sits just under the caption band so the two read as one group, and
+        above the platform UI reserve because it is derived from
+        --caption-zone-bottom rather than from the frame edge.
+      */
+      #progress-track {
+        position: absolute;
+        left: 50%;
+        margin-left: calc(var(--progress-width) / -2);
+        width: var(--progress-width);
+        top: calc(var(--caption-zone-bottom) + var(--progress-gap));
+        height: var(--progress-height);
+        background: var(--progress-track-color);
+        z-index: 150;
+      }
+
+      /*
+        No CSS transform here on purpose: the fill's scaleX is driven by GSAP,
+        and pairing a CSS initial transform with a tween on the same property
+        is a lint failure. The initial state lives in the fromTo below.
+      */
+      #progress-fill {
+        width: 100%;
+        height: 100%;
+        background: var(--progress-fill-color);
+        transform-origin: left center;
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      id="root"
+      data-composition-id="{{COMPOSITION_ID}}"
+      data-start="0"
+      data-width="{{COMPOSITION_WIDTH}}"
+      data-height="{{COMPOSITION_HEIGHT}}"
+      data-duration="{{DURATION_SECONDS}}"
+    >
+      <div id="stage-ground"></div>
+
+      <!--
+        The video is the clip itself. Wrapping it in another timed element
+        makes the framework lose ownership of playback and the footage freezes
+        in the render.
+      -->
+      <video
+        id="footage"
+        class="clip"
+        src="{{VIDEO_SRC}}"
+        data-start="0"
+        data-duration="{{DURATION_SECONDS}}"
+        data-track-index="0"
+        muted
+        playsinline
+      ></video>
+
+      <!--
+        The spoken audio. HyperFrames requires a SEPARATE <audio> element even
+        when the source file is the same: the <video> above is muted and only
+        carries picture, so without this the render comes out silent. It stays
+        a direct child of the root because a timed wrapper would take playback
+        ownership away from the framework.
+      -->
+      <audio
+        id="footage-audio"
+        src="{{VIDEO_SRC}}"
+        data-start="0"
+        data-duration="{{DURATION_SECONDS}}"
+        data-track-index="10"
+        data-volume="1"
+      ></audio>
+
+      <div
+        id="overlay"
+        class="clip"
+        data-start="0"
+        data-duration="{{DURATION_SECONDS}}"
+        data-track-index="1"
+      >
+        <div id="upper-left-column">
+          <div id="topic-lockup">
+            <div class="topic-line" id="topic-line-1">{{TOPIC_LINE_1}}</div>
+            <div id="topic-rule"></div>
+            <div class="topic-line" id="topic-line-2">{{TOPIC_LINE_2}}</div>
+          </div>
+
+          <div id="speaker-credentials">
+            <div id="speaker-name">{{SPEAKER_NAME}}</div>
+            <div id="speaker-details">{{SPEAKER_CREDENTIALS}}</div>
+          </div>
+        </div>
+
+        <div id="captions-container"></div>
+
+        <div id="progress-track">
+          <div id="progress-fill"></div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Injected by make-package.cjs via JSON.stringify — already escaped.
+      const captionSegments = {{CAPTION_SEGMENTS_JSON}};
+
+      /*
+        Build caption DOM.
+
+        Each segment becomes one absolutely-positioned .caption holding one
+        .caption-line per wrapped line, holding one .chunk per reveal token.
+        No <br> is used — HyperFrames bans it in body text.
+      */
+      const captionsContainer = document.getElementById("captions-container");
+
+      captionSegments.forEach((segment, index) => {
+        const caption = document.createElement("div");
+        caption.className = "caption";
+        caption.id = "caption-" + index;
+
+        segment.lines.forEach((line) => {
+          const lineEl = document.createElement("div");
+          lineEl.className = "caption-line";
+          // Chunks are inline runs of one sentence, not competing text blocks.
+          // Their boxes touch by design as the line flows left to right.
+          lineEl.setAttribute("data-layout-allow-overlap", "");
+          line.forEach((chunk) => {
+            const span = document.createElement("span");
+            span.className = chunk.emphasis ? "chunk emphasis" : "chunk";
+            span.textContent = chunk.text;
+            lineEl.appendChild(span);
+          });
+          caption.appendChild(lineEl);
+        });
+
+        captionsContainer.appendChild(caption);
+      });
+
+      window.__timelines = window.__timelines || {};
+      const tl = gsap.timeline({ paused: true });
+
+      // Topic lockup: fade + rise on the first beat, then fixed.
+      tl.fromTo(
+        "#topic-lockup",
+        { autoAlpha: 0, y: 10 },
+        { autoAlpha: 1, y: 0, duration: 0.34, ease: "power2.out" },
+        0,
+      );
+
+      // Credentials follow the title by ~110ms.
+      tl.fromTo(
+        "#speaker-credentials",
+        { autoAlpha: 0, y: 8 },
+        { autoAlpha: 1, y: 0, duration: 0.3, ease: "power2.out" },
+        0.11,
+      );
+
+      /*
+        Captions: speech-led left-to-right reveal.
+
+        Chunks are distributed across the segment by character weight, and the
+        reveal completes at REVEAL_WINDOW of the segment so the finished line
+        stays readable before it is replaced.
+      */
+      const REVEAL_WINDOW = 0.72;
+      const CHUNK_FADE = 0.11;
+      const EXIT_FADE = 0.1;
+
+      captionSegments.forEach((segment, index) => {
+        const caption = document.getElementById("caption-" + index);
+        const chunks = caption.querySelectorAll(".chunk");
+        const segmentDuration = Math.max(segment.end - segment.start, 0.2);
+
+        // Zero-duration boundary sets on a non-clip wrapper: the sanctioned
+        // visibility exception. Never gsap.set a .clip element here.
+        tl.set(caption, { autoAlpha: 1 }, segment.start);
+
+        const weights = [];
+        let totalWeight = 0;
+        chunks.forEach((chunk) => {
+          const weight = Math.max(chunk.textContent.length, 1);
+          weights.push(weight);
+          totalWeight += weight;
+        });
+
+        const revealSpan = segmentDuration * REVEAL_WINDOW;
+        let elapsedWeight = 0;
+
+        chunks.forEach((chunk, chunkIndex) => {
+          const at = segment.start + (elapsedWeight / totalWeight) * revealSpan;
+          elapsedWeight += weights[chunkIndex];
+
+          if (chunk.classList.contains("emphasis")) {
+            tl.fromTo(
+              chunk,
+              { autoAlpha: 0, y: 6, scale: 0.98 },
+              { autoAlpha: 1, y: 0, scale: 1, duration: 0.13, ease: "power2.out" },
+              at,
+            );
+          } else {
+            tl.fromTo(
+              chunk,
+              { autoAlpha: 0, y: 6 },
+              { autoAlpha: 1, y: 0, duration: CHUNK_FADE, ease: "power2.out" },
+              at,
+            );
+          }
+        });
+
+        // The fade must FINISH at segment.end, not start there. Captions are
+        // usually back to back, so fading out from segment.end would overlap
+        // the next caption for the whole fade and stack two phrases on top of
+        // each other at the same position.
+        tl.to(
+          caption,
+          { autoAlpha: 0, duration: EXIT_FADE, ease: "power1.in" },
+          Math.max(segment.start, segment.end - EXIT_FADE),
+        );
+      });
+
+      // Progress: strictly linear across the whole clip. It reports elapsed
+      // time, so any easing would make it lie about where the viewer is.
+      tl.fromTo(
+        "#progress-fill",
+        { scaleX: 0 },
+        { scaleX: 1, duration: {{DURATION_SECONDS}}, ease: "none" },
+        0,
+      );
+
+      window.__timelines["{{COMPOSITION_ID}}"] = tl;
+    </script>
+  </body>
+</html>

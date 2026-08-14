@@ -1,0 +1,4 @@
+interface:
+  display_name: "KB Cut"
+  short_description: "本地 Whisper 粗剪、钩子重排、竖屏字幕包装与封面输出"
+  default_prompt: "使用 $kbcut 剪辑这条口播视频，完成去废话、钩子重排、动态字幕包装和封面输出。"

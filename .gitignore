@@ -1,0 +1,28 @@
+.DS_Store
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+
+# Local editing outputs and secrets
+.kbcut/
+work/
+working/
+delivery/
+*.mp4
+*.mov
+*.m4v
+*.mkv
+*.wav
+*.srt
+*.jsonl
+*.tsv
+
+# HyperFrames/browser artifacts
+.hyperframes/
+snapshots/
+renders/
+
+# Local test scratch area
+测试区域/
