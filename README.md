@@ -38,7 +38,7 @@ Start a complete editing task with `kbcut`. During startup it automatically reso
 
 ### Workflow
 
-![KB Cut workflow](./pic/kbcut%20使用流程.png)
+
 
 1. Prepare a talking-head, interview, or knowledge-sharing video and place the source material in a local project directory.
 2. Call `kbcut` in a compatible Agent environment such as Doubao, WorkBuddy, Claude Code, or Codex, providing the material path and editing goals.

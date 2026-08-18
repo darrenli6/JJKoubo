@@ -38,8 +38,6 @@ skills/
 
 ### 使用流程
 
-![KB Cut 使用流程](./pic/kbcut%20使用流程.png)
-
 1. 准备拍摄完成的口播、访谈或知识分享视频，并将素材放在本地项目目录中。
 2. 在豆包、WorkBuddy、Claude Code、Codex 等兼容的 Agent 环境中调用 `kbcut`，提交素材路径和剪辑目标。
 3. `kbcut` 调用 `kbcut-style`，确定 `frame.md` 风格、字体角色与封面规范；确认输出画幅后，开始本地转写、内容重剪、钩子优化和视觉包装。
