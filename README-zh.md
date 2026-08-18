@@ -123,10 +123,11 @@ KB Cut 将本地视频转写、口播内容重剪、钩子优化、动态字幕�
 <table>
   <tr>
     <td align="center" width="50%">
-      <img src="./assets/darren.png" alt="作者联系二维码" width="280">
+      <img src="./assets/zsxq.png" alt="作者联系二维码" width="280">
       <br>
       作者联系
     </td>
+    
   </tr>
 </table>
 

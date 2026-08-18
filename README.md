@@ -123,10 +123,11 @@ Talking-head creators, knowledge creators, interview editors, and content teams 
 <table>
   <tr>
     <td align="center" width="50%">
-      <img src="./assets/darren.png" alt="Author contact QR code" width="280">
+      <img src="./assets/zsxq.png" alt="Author contact QR code" width="280">
       <br>
       Author contact
     </td>
+    
   </tr>
 </table>
 
