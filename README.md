@@ -13,6 +13,27 @@ This repository currently contains two Skills:
 
 The project uses an extensible `kbcut-*` Skill family structure. When adding a new capability, create a new sibling directory instead of continuing to place every feature in the main Skill. Examples include `kbcut-vlog`, `kbcut-podcast`, and `kbcut-export`.
 
+## Talking-Head Output Showcase
+
+The following images show a sample output produced with the `founder-interview` style:
+
+| Packaged talking-head frame | Standalone cover |
+| --- | --- |
+| ![Packaged talking-head frame](./assets/prd/1.png) | ![Standalone talking-head cover](./assets/prd/2.png) |
+
+The packaged frame keeps the speaker as the primary visual, anchors the topic and identity block near the top, and places speech-synced captions in a subject-safe area. The standalone cover extracts the core idea into a large title using the same visual system, but remains an independent composition rather than a screenshot of the captioned video.
+
+## What Each Run Produces
+
+A completed KB Cut run normally produces:
+
+- `*_optimized.mp4`: the cleaned talking-head edit with dead air, filler, repeated phrasing, and clear verbal slips reduced where appropriate.
+- `*_9x16_packaged.mp4`: the publishable version with motion captions, topic and speaker information, and a progress cue. Other confirmed aspect ratios such as `3:4` and `1:1` are supported.
+- `*_9x16_cover.png`: an independent cover image, not a captioned process frame.
+- `kbcut工作文件/`: transcripts, edit plans, the copied style preset, the HyperFrames project, snapshots, and review records for inspection and iteration.
+
+The default workflow is local-first: the source video, Whisper transcript, FFmpeg recut, HyperFrames composition, previews, and final deliverables remain in the project directory.
+
 ## Installation
 
 Copy or symlink the Skill directories into the skills directory used by your Agent environment:
@@ -51,8 +72,18 @@ To list or parse `frame.md` style presets directly:
 
 ```bash
 python3 kbcut-style/scripts/resolve_style.py --list
-python3 kbcut-style/scripts/resolve_style.py founder-interview --project-root .
+python3 kbcut-style/scripts/resolve_style.py --style founder-interview --project . --require-template
 ```
+
+You can also start a run directly from an Agent:
+
+```text
+Use $kbcut to edit /absolute/path/to/video.mp4
+Style: founder-interview
+Aspect ratio: 9:16
+```
+
+At startup, `kbcut` confirms the style, creator profile, fonts, aspect ratio, crop/shot plan, and hook strategy before transcription and rendering begin.
 
 The workflow is local-first. Source material, transcripts, working files, previews, and final deliverables should remain in the user's project directory; source videos are not uploaded by default.
 
@@ -71,6 +102,10 @@ kbcut-style/
 ├── agents/openai.yaml
 ├── assets/frame-presets/
 └── scripts/resolve_style.py
+
+assets/prd/
+├── 1.png                         # packaged talking-head frame example
+└── 2.png                         # standalone cover example
 ```
 
 ## Adding a Skill

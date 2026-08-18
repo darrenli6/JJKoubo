@@ -13,6 +13,27 @@ JJ Koubo 是一组本地优先的视频剪辑 Skill，面向口播、访谈、�
 
 本项目采用可扩展的 `kbcut-*` Skill 集合结构。后续新增能力时，应创建新的同级目录，而不是把所有功能继续堆进主 Skill。例如：`kbcut-vlog`、`kbcut-podcast` 或 `kbcut-export`。
 
+## 口播产出展示
+
+下面是使用 `founder-interview` 风格完成的一次口播产出示例：
+
+| 口播包装帧 | 独立封面 |
+| --- | --- |
+| ![口播包装帧](./assets/prd/1.png) | ![口播独立封面](./assets/prd/2.png) |
+
+口播包装帧保留人物作为第一视觉，在画面上方固定展示主题和身份信息，并在安全区域同步显示字幕。独立封面从视频核心观点提炼标题，使用同一套风格字体和视觉规范，但不复用视频内字幕布局。
+
+## 一次剪辑会得到什么
+
+完成一次 KB Cut 任务后，项目目录中通常会得到：
+
+- `*_口播优化版.mp4`：去除无效停顿、废话、重复表达和明显口误后的基础成片。
+- `*_9x16_包装版.mp4`：带动态字幕、主题信息、身份信息和进度条的发布版；画幅也可以确认使用 `3:4`、`1:1` 等比例。
+- `*_9x16_封面.png`：独立封面图，不直接截取带字幕的过程帧。
+- `kbcut工作文件/`：转写文件、剪辑计划、风格副本、HyperFrames 项目、快照和验收记录，便于复核与再次调整。
+
+整个流程默认在本地完成：源视频、Whisper 转写、FFmpeg 重剪、HyperFrames 包装和最终文件都保存在用户指定的项目目录中。
+
 ## 安装
 
 将 Skill 目录复制或软链接到 Agent 运行环境使用的 skills 目录：
@@ -49,8 +70,18 @@ skills/
 
 ```bash
 python3 kbcut-style/scripts/resolve_style.py --list
-python3 kbcut-style/scripts/resolve_style.py founder-interview --project-root .
+python3 kbcut-style/scripts/resolve_style.py --style founder-interview --project . --require-template
 ```
+
+也可以在 Agent 中直接调用：
+
+```text
+使用 $kbcut 剪辑 /绝对路径/视频.mp4
+风格：founder-interview
+画幅：9:16
+```
+
+启动后，`kbcut` 会依次确认风格、个人 IP 信息、字体、画幅、裁切/机位和开头钩子策略，再开始转写与生成文件。
 
 整个工作流以本地处理为原则。原始素材、转写结果、工作文件、预览和最终交付物都应保存在用户项目目录中，默认不上传源视频。
 
@@ -69,6 +100,10 @@ kbcut-style/
 ├── agents/openai.yaml
 ├── assets/frame-presets/
 └── scripts/resolve_style.py
+
+assets/prd/
+├── 1.png                         # 口播包装帧示例
+└── 2.png                         # 独立封面示例
 ```
 
 ## 新增 Skill
